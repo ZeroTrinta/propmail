@@ -83,7 +83,7 @@ export default function UpgradePage() {
             fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
             textDecoration: 'none', textAlign: 'center'
           }}>
-            Start 7-day free trial
+            Subscribe to Pro
           </a>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
