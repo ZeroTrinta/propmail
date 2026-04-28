@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { supabaseAdmin } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { SYSTEM_PROMPTS, EMAIL_TYPES } from '@/lib/prompts'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -9,7 +10,28 @@ const FREE_LIMIT = 5
 
 export async function POST(req: NextRequest) {
   try {
-    const { emailType, name, property, context, tone, userId, agentName, agentPhone } = await req.json()
+    // Verify user from Authorization header instead of trusting body
+    const authHeader = req.headers.get('authorization') ?? ''
+    const token = authHeader.replace('Bearer ', '')
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Validate token server-side
+    const supabaseUser = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser(token)
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const userId = user.id
+
+    const { emailType, name, property, context, tone, agentName, agentPhone } = await req.json()
 
     if (!emailType || !name || !property) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
@@ -19,41 +41,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid email type.' }, { status: 400 })
     }
 
-    // Check if type is pro-only
     const typeConfig = EMAIL_TYPES.find(t => t.id === emailType)
     const isProType = typeConfig?.pro ?? false
 
-    // Check user status
-    let isPro = false
-    if (userId) {
-      const { data: user } = await supabaseAdmin
-        .from('users')
-        .select('is_pro, generations_used, generations_reset_at')
-        .eq('id', userId)
-        .single()
+    // Check user status from DB
+    const { data: dbUser } = await supabaseAdmin
+      .from('users')
+      .select('is_pro, generations_used, generations_reset_at')
+      .eq('id', userId)
+      .single()
 
-      if (user) {
-        isPro = user.is_pro
+    if (!dbUser) {
+      return NextResponse.json({ error: 'User not found.' }, { status: 404 })
+    }
 
-        if (!isPro) {
-          // Check if monthly reset is due
-          const resetAt = user.generations_reset_at ? new Date(user.generations_reset_at) : null
-          const now = new Date()
-          const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+    const isPro = dbUser.is_pro
 
-          if (!resetAt || resetAt < oneMonthAgo) {
-            // Reset counter
-            await supabaseAdmin
-              .from('users')
-              .update({ generations_used: 0, generations_reset_at: now.toISOString() })
-              .eq('id', userId)
-            user.generations_used = 0
-          }
+    if (!isPro) {
+      const resetAt = dbUser.generations_reset_at ? new Date(dbUser.generations_reset_at) : null
+      const now = new Date()
+      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
 
-          if (user.generations_used >= FREE_LIMIT) {
-            return NextResponse.json({ error: 'FREE_LIMIT_REACHED' }, { status: 403 })
-          }
-        }
+      if (!resetAt || resetAt < oneMonthAgo) {
+        await supabaseAdmin
+          .from('users')
+          .update({ generations_used: 0, generations_reset_at: now.toISOString() })
+          .eq('id', userId)
+        dbUser.generations_used = 0
+      }
+
+      if (dbUser.generations_used >= FREE_LIMIT) {
+        return NextResponse.json({ error: 'FREE_LIMIT_REACHED' }, { status: 403 })
       }
     }
 
@@ -68,7 +86,6 @@ export async function POST(req: NextRequest) {
     }
 
     const typeLabel = typeConfig?.label ?? emailType
-
     const agentSignature = agentName
       ? `Agent name: ${agentName}${agentPhone ? `, Phone: ${agentPhone}` : ''}`
       : ''
@@ -94,10 +111,7 @@ ${agentSignature}
       .map(b => (b as { type: 'text'; text: string }).text)
       .join('')
 
-    // Increment usage counter
-    if (userId) {
-      await supabaseAdmin.rpc('increment_generations', { user_id: userId })
-    }
+    await supabaseAdmin.rpc('increment_generations', { user_id: userId })
 
     return NextResponse.json({ email: text })
   } catch (err) {

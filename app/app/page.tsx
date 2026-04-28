@@ -67,10 +67,16 @@ export default function AppPage() {
     setLoading(true)
     setOutput('')
 
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token ?? ''
+
     const res = await fetch('/api/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, emailType: selectedType, userId, agentName, agentPhone }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ ...form, emailType: selectedType, agentName, agentPhone }),
     })
 
     const data = await res.json()
