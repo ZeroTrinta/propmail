@@ -5,7 +5,18 @@ import type { NextRequest } from 'next/server'
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
-  await supabase.auth.getSession()
+
+  const { data: { session } } = await supabase.auth.getSession()
+
+  const protectedRoutes = ['/app', '/upgrade']
+  const isProtected = protectedRoutes.some(route => req.nextUrl.pathname.startsWith(route))
+
+  if (isProtected && !session) {
+    const loginUrl = new URL('/login', req.url)
+    loginUrl.searchParams.set('redirect', req.nextUrl.pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
   return res
 }
 

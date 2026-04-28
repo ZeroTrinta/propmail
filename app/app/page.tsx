@@ -39,8 +39,8 @@ export default function AppPage() {
             }
           })
       } else {
-        const count = parseInt(localStorage.getItem('pm_gen_count') || '0')
-        setGenerationsUsed(count)
+        // Not logged in — middleware will redirect to /login
+        window.location.href = '/login'
       }
     })
   }, [])
