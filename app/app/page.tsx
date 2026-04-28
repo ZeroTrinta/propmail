@@ -158,10 +158,16 @@ export default function AppPage() {
                 }}>Upgrade to Pro</Link>
               ) : null}
               {isPro && userEmail && (
-                <button onClick={() => setShowProfile(true)} style={{
-                  background: 'none', border: '1px solid var(--border)', borderRadius: '6px',
-                  padding: '5px 10px', fontSize: '0.75rem', color: 'var(--fg2)', cursor: 'pointer'
-                }}>My profile</button>
+                <>
+                  <Link href="/history" style={{
+                    background: 'none', border: '1px solid var(--border)', borderRadius: '6px',
+                    padding: '5px 10px', fontSize: '0.75rem', color: 'var(--fg2)', textDecoration: 'none'
+                  }}>History</Link>
+                  <button onClick={() => setShowProfile(true)} style={{
+                    background: 'none', border: '1px solid var(--border)', borderRadius: '6px',
+                    padding: '5px 10px', fontSize: '0.75rem', color: 'var(--fg2)', cursor: 'pointer'
+                  }}>My profile</button>
+                </>
               )}
               {userEmail && (
                 <button onClick={handleSignOut} style={{

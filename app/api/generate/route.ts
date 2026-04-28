@@ -10,7 +10,6 @@ const FREE_LIMIT = 5
 
 export async function POST(req: NextRequest) {
   try {
-    // Verify user from Authorization header instead of trusting body
     const authHeader = req.headers.get('authorization') ?? ''
     const token = authHeader.replace('Bearer ', '')
 
@@ -18,7 +17,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Validate token server-side
     const supabaseUser = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -44,7 +42,6 @@ export async function POST(req: NextRequest) {
     const typeConfig = EMAIL_TYPES.find(t => t.id === emailType)
     const isProType = typeConfig?.pro ?? false
 
-    // Check user status from DB
     const { data: dbUser } = await supabaseAdmin
       .from('users')
       .select('is_pro, generations_used, generations_reset_at')
@@ -114,6 +111,18 @@ ${agentSignature}
       .join('')
 
     await supabaseAdmin.rpc('increment_generations', { user_id: userId })
+
+    // Save to history for Pro users
+    if (isPro) {
+      await supabaseAdmin.from('generations').insert({
+        user_id: userId,
+        email_type: emailType,
+        type_label: typeLabel,
+        input_name: name,
+        input_property: property,
+        output: text,
+      })
+    }
 
     return NextResponse.json({ email: text })
   } catch (err) {
