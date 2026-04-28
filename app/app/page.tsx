@@ -247,6 +247,14 @@ export default function AppPage() {
             <Section label="ACCOUNT">
               <p style={{ fontSize: '0.82rem', color: 'var(--fg2)' }}>{userEmail}</p>
               <p style={{ fontSize: '0.78rem', color: 'var(--blue)' }}>Pro plan — active</p>
+              <a
+                href="https://app.lemonsqueezy.com/my-orders"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: '0.78rem', color: '#fc8181', textDecoration: 'none' }}
+              >
+                Manage or cancel subscription →
+              </a>
             </Section>
 
             <div style={{ display: 'flex', gap: '10px' }}>

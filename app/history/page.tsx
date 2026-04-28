@@ -1,6 +1,7 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { EMAIL_TYPES, TONES } from '@/lib/prompts'
 import Link from 'next/link'
 
 type Generation = {
@@ -19,10 +20,17 @@ export default function HistoryPage() {
   const [selected, setSelected] = useState<Generation | null>(null)
   const [copied, setCopied] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
+  const [regenOutput, setRegenOutput] = useState<string | null>(null)
+  const [regenCopied, setRegenCopied] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) { window.location.replace('/login'); return }
+      setUserId(data.user.id)
 
       supabase
         .from('users')
@@ -38,7 +46,7 @@ export default function HistoryPage() {
             .select('*')
             .eq('user_id', data.user.id)
             .order('created_at', { ascending: false })
-            .limit(100)
+            .limit(200)
             .then(({ data: g }) => {
               setGenerations(g ?? [])
               setLoading(false)
@@ -47,11 +55,57 @@ export default function HistoryPage() {
     })
   }, [])
 
-  const handleCopy = () => {
+  const filtered = generations.filter(g => {
+    const q = search.toLowerCase()
+    return (
+      g.type_label.toLowerCase().includes(q) ||
+      g.input_name.toLowerCase().includes(q) ||
+      g.input_property.toLowerCase().includes(q)
+    )
+  })
+
+  const handleCopy = (text: string, setter: (v: boolean) => void) => {
+    navigator.clipboard.writeText(text)
+    setter(true)
+    setTimeout(() => setter(false), 2000)
+  }
+
+  const handleDelete = async () => {
     if (!selected) return
-    navigator.clipboard.writeText(selected.output)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setDeleting(true)
+    await supabase.from('generations').delete().eq('id', selected.id)
+    setGenerations(prev => prev.filter(g => g.id !== selected.id))
+    setSelected(null)
+    setRegenOutput(null)
+    setDeleting(false)
+  }
+
+  const handleRegenerate = async () => {
+    if (!selected) return
+    setRegenerating(true)
+    setRegenOutput(null)
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token ?? ''
+
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        emailType: selected.email_type,
+        name: selected.input_name,
+        property: selected.input_property,
+        context: '',
+        tone: 'balanced',
+      }),
+    })
+
+    const data = await res.json()
+    setRegenOutput(data.email || 'Something went wrong.')
+    setRegenerating(false)
   }
 
   const formatDate = (iso: string) => {
@@ -82,25 +136,43 @@ export default function HistoryPage() {
       </header>
 
       <main style={{ position: 'relative', zIndex: 10, display: 'flex', flex: 1, overflow: 'hidden' }}>
+
+        {/* Left list */}
         <div style={{ width: '340px', minWidth: '280px', borderRight: '1px solid var(--border)', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '20px 20px 12px', borderBottom: '1px solid var(--border)' }}>
-            <p style={{ fontSize: '0.62rem', letterSpacing: '0.16em', color: 'var(--blue)', fontWeight: 500 }}>EMAIL HISTORY</p>
-            <p style={{ fontSize: '0.78rem', color: 'var(--fg3)', marginTop: '4px' }}>{generations.length} email{generations.length !== 1 ? 's' : ''} generated</p>
+
+          <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ fontSize: '0.62rem', letterSpacing: '0.16em', color: 'var(--blue)', fontWeight: 500 }}>EMAIL HISTORY</p>
+              <p style={{ fontSize: '0.72rem', color: 'var(--fg3)' }}>{filtered.length} email{filtered.length !== 1 ? 's' : ''}</p>
+            </div>
+            <input
+              style={{
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                borderRadius: '6px', padding: '8px 10px',
+                color: 'var(--fg)', fontSize: '0.82rem',
+                fontFamily: 'DM Sans, sans-serif', width: '100%',
+              }}
+              placeholder="Search by name, property or type..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
           </div>
 
           {loading && <div style={{ padding: '40px', textAlign: 'center', color: 'var(--fg3)', fontSize: '0.84rem' }}>Loading...</div>}
 
-          {!loading && generations.length === 0 && (
+          {!loading && filtered.length === 0 && (
             <div style={{ padding: '40px 24px', textAlign: 'center' }}>
-              <p style={{ fontSize: '0.9rem', color: 'var(--fg3)', lineHeight: 1.6 }}>No emails generated yet.</p>
-              <Link href="/app" style={{ display: 'inline-block', marginTop: '16px', color: 'var(--blue)', fontSize: '0.84rem', textDecoration: 'none' }}>Generate your first email</Link>
+              <p style={{ fontSize: '0.9rem', color: 'var(--fg3)', lineHeight: 1.6 }}>
+                {search ? 'No results found.' : 'No emails generated yet.'}
+              </p>
+              {!search && <Link href="/app" style={{ display: 'inline-block', marginTop: '16px', color: 'var(--blue)', fontSize: '0.84rem', textDecoration: 'none' }}>Generate your first email</Link>}
             </div>
           )}
 
-          {!loading && generations.map(g => (
-            <button key={g.id} onClick={() => setSelected(g)} style={{
+          {!loading && filtered.map(g => (
+            <button key={g.id} onClick={() => { setSelected(g); setRegenOutput(null) }} style={{
               display: 'flex', flexDirection: 'column', gap: '4px',
-              padding: '14px 20px', textAlign: 'left',
+              padding: '14px 16px', textAlign: 'left',
               background: selected?.id === g.id ? 'var(--blue-dim)' : 'none',
               border: 'none',
               borderBottom: '1px solid var(--border)',
@@ -114,6 +186,7 @@ export default function HistoryPage() {
           ))}
         </div>
 
+        {/* Right preview */}
         <div style={{ flex: 1, padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '14px', overflow: 'hidden' }}>
           {!selected ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', opacity: 0.3 }}>
@@ -122,20 +195,38 @@ export default function HistoryPage() {
             </div>
           ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              {/* Top bar */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
                   <p style={{ fontSize: '0.62rem', letterSpacing: '0.16em', color: 'var(--blue)', fontWeight: 500 }}>{selected.type_label.toUpperCase()}</p>
                   <p style={{ fontSize: '0.78rem', color: 'var(--fg3)', marginTop: '2px' }}>{selected.input_name} · {selected.input_property}</p>
                 </div>
-                <button onClick={handleCopy} style={{
-                  background: 'var(--blue-dim)', border: '1px solid var(--blue-border)',
-                  borderRadius: '6px', padding: '5px 13px',
-                  color: 'var(--blue)', fontSize: '0.76rem', cursor: 'pointer', letterSpacing: '0.05em'
-                }}>{copied ? '✓ Copied' : 'Copy'}</button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={handleRegenerate} disabled={regenerating} style={{
+                    background: 'var(--surface)', border: '1px solid var(--border)',
+                    borderRadius: '6px', padding: '5px 13px',
+                    color: 'var(--fg2)', fontSize: '0.76rem', cursor: regenerating ? 'not-allowed' : 'pointer',
+                    opacity: regenerating ? 0.5 : 1
+                  }}>{regenerating ? 'Writing...' : '↺ Regenerate'}</button>
+                  <button onClick={handleDelete} disabled={deleting} style={{
+                    background: 'none', border: '1px solid rgba(252,129,129,0.3)',
+                    borderRadius: '6px', padding: '5px 13px',
+                    color: '#fc8181', fontSize: '0.76rem', cursor: deleting ? 'not-allowed' : 'pointer',
+                    opacity: deleting ? 0.5 : 1
+                  }}>{deleting ? 'Deleting...' : 'Delete'}</button>
+                  <button onClick={() => handleCopy(selected.output, setCopied)} style={{
+                    background: 'var(--blue-dim)', border: '1px solid var(--blue-border)',
+                    borderRadius: '6px', padding: '5px 13px',
+                    color: 'var(--blue)', fontSize: '0.76rem', cursor: 'pointer', letterSpacing: '0.05em'
+                  }}>{copied ? '✓ Copied' : 'Copy'}</button>
+                </div>
               </div>
 
+              {/* Original email */}
               <div style={{
-                flex: 1, background: 'var(--surface)', border: '1px solid var(--border)',
+                flex: regenOutput ? '0 0 auto' : 1,
+                maxHeight: regenOutput ? '45%' : undefined,
+                background: 'var(--surface)', border: '1px solid var(--border)',
                 borderRadius: '10px', padding: '24px', overflowY: 'auto'
               }}>
                 <pre style={{
@@ -144,6 +235,45 @@ export default function HistoryPage() {
                   whiteSpace: 'pre-wrap', wordBreak: 'break-word'
                 }}>{selected.output}</pre>
               </div>
+
+              {/* Regenerated version */}
+              {(regenerating || regenOutput) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <p style={{ fontSize: '0.62rem', letterSpacing: '0.16em', color: 'var(--blue)', fontWeight: 500 }}>NEW VERSION</p>
+                    {regenOutput && (
+                      <button onClick={() => handleCopy(regenOutput, setRegenCopied)} style={{
+                        background: 'var(--blue-dim)', border: '1px solid var(--blue-border)',
+                        borderRadius: '6px', padding: '5px 13px',
+                        color: 'var(--blue)', fontSize: '0.76rem', cursor: 'pointer'
+                      }}>{regenCopied ? '✓ Copied' : 'Copy'}</button>
+                    )}
+                  </div>
+                  <div style={{
+                    flex: 1, background: 'rgba(99,179,237,0.04)', border: '1px solid var(--blue-border)',
+                    borderRadius: '10px', padding: '24px', overflowY: 'auto',
+                    display: 'flex', alignItems: regenerating ? 'center' : 'flex-start', justifyContent: regenerating ? 'center' : 'flex-start'
+                  }}>
+                    {regenerating ? (
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        {[0, 0.2, 0.4].map((d, i) => (
+                          <span key={i} style={{
+                            width: '7px', height: '7px', borderRadius: '50%',
+                            background: 'var(--blue)', display: 'inline-block',
+                            animation: `bounce 1.2s ${d}s infinite ease-in-out`
+                          }} />
+                        ))}
+                      </div>
+                    ) : (
+                      <pre style={{
+                        fontFamily: 'DM Sans, sans-serif', fontSize: '0.9rem',
+                        lineHeight: 1.78, color: 'rgba(232,237,242,0.82)',
+                        whiteSpace: 'pre-wrap', wordBreak: 'break-word'
+                      }}>{regenOutput}</pre>
+                    )}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
