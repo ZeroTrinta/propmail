@@ -20,12 +20,14 @@ export default function AppPage() {
   const [agentPhone, setAgentPhone] = useState('')
   const [showProfile, setShowProfile] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [authLoaded, setAuthLoaded] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setUserId(data.user.id)
         setUserEmail(data.user.email ?? null)
+        setAuthLoaded(true)
         supabase
           .from('users')
           .select('is_pro, generations_used, agent_name, agent_phone')
@@ -122,7 +124,7 @@ export default function AppPage() {
           PropMail
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {!userEmail && (
+          {authLoaded && !userEmail && (
             <Link href="/login" style={{ fontSize: '0.78rem', color: 'var(--fg3)', textDecoration: 'none' }}>Sign in</Link>
           )}
           {loaded && isPro ? (
