@@ -39,8 +39,7 @@ export default function AppPage() {
             }
           })
       } else {
-        // Not logged in — middleware will redirect to /login
-        window.location.href = '/login'
+        window.location.replace('/login')
       }
     })
   }, [])
