@@ -79,7 +79,7 @@ export default function Home() {
 
         {/* Pills */}
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '48px' }}>
-          {['8 email types', 'Tone control', 'No editing needed', 'Built for agents'].map(f => (
+          {['5 free emails/month', '4 email types free', 'No credit card needed', 'Built for agents'].map(f => (
             <div key={f} style={{
               background: 'var(--blue-dim)', border: '1px solid var(--blue-border)',
               borderRadius: '20px', padding: '7px 14px',

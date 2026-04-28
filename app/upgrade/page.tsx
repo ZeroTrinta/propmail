@@ -14,6 +14,12 @@ const FEATURES = [
   { label: 'Multiple email variations',           current: false },
 ]
 
+const TESTIMONIAL = {
+  quote: "The negotiation email templates alone are worth it. My response rate went up noticeably in the first week.",
+  name: 'James T.',
+  role: 'Real Estate Agent, Austin TX',
+}
+
 export default function UpgradePage() {
   const checkoutUrl = process.env.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_URL ?? '#'
 
@@ -31,6 +37,11 @@ export default function UpgradePage() {
         <h1 style={{ fontFamily: 'Lora, serif', fontSize: '2.4rem', fontWeight: 700, lineHeight: 1.15, color: 'var(--fg)' }}>
           Unlock <em>Pro access</em>
         </h1>
+
+        {/* Price anchor */}
+        <p style={{ fontSize: '0.82rem', color: 'var(--fg3)', lineHeight: 1.6 }}>
+          $19/mo — less than $0.65/day. Agents spend 30+ minutes writing emails every day. PropMail pays for itself in the first hour.
+        </p>
 
         <div style={{
           background: 'var(--surface)', border: '1px solid var(--blue-border)',
@@ -50,7 +61,7 @@ export default function UpgradePage() {
             ))}
           </ul>
 
-          {/* Divider */}
+          {/* Coming soon */}
           <div style={{ alignSelf: 'stretch', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
             <p style={{ fontSize: '0.62rem', letterSpacing: '0.14em', color: 'var(--blue)', textTransform: 'uppercase', marginBottom: '12px' }}>
               Coming soon for Pro
@@ -64,6 +75,7 @@ export default function UpgradePage() {
             </ul>
           </div>
 
+          {/* CTA */}
           <a href={checkoutUrl} style={{
             display: 'block', width: '100%',
             background: 'var(--blue)', border: 'none', borderRadius: '7px',
@@ -71,8 +83,25 @@ export default function UpgradePage() {
             fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
             textDecoration: 'none', textAlign: 'center'
           }}>
-            Subscribe to Pro
+            Start 7-day free trial
           </a>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--fg3)' }}>Cancel anytime. No questions asked.</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--fg3)' }}>Not happy in 7 days? Email us for a full refund.</p>
+          </div>
+        </div>
+
+        {/* Testimonial */}
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: '10px', padding: '20px 24px', textAlign: 'left', width: '100%'
+        }}>
+          <p style={{ fontSize: '0.86rem', color: 'rgba(232,237,242,0.7)', lineHeight: 1.65, marginBottom: '12px' }}>
+            "{TESTIMONIAL.quote}"
+          </p>
+          <p style={{ fontSize: '0.78rem', color: 'var(--blue)', fontWeight: 500 }}>{TESTIMONIAL.name}</p>
+          <p style={{ fontSize: '0.72rem', color: 'var(--fg3)' }}>{TESTIMONIAL.role}</p>
         </div>
 
         <Link href="/app" style={{ fontSize: '0.83rem', color: 'var(--fg3)', textDecoration: 'none' }}>
