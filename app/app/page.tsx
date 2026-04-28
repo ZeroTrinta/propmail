@@ -15,7 +15,7 @@ export default function AppPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [isPro, setIsPro] = useState(false)
-  const [generationsUsed, setGenerationsUsed] = useState(0)
+  const [generationsUsed, setGenerationsUsed] = useState<number | null>(null)
   const [agentName, setAgentName] = useState('')
   const [agentPhone, setAgentPhone] = useState('')
   const [showProfile, setShowProfile] = useState(false)
@@ -55,7 +55,7 @@ export default function AppPage() {
     setShowProfile(false)
   }
 
-  const remaining = isPro ? Infinity : Math.max(0, FREE_LIMIT - generationsUsed)
+  const remaining = isPro ? Infinity : generationsUsed === null ? null : Math.max(0, FREE_LIMIT - generationsUsed)
 
   const handleGenerate = async () => {
     if (!selectedType || !form.name.trim() || !form.property.trim()) return
@@ -127,7 +127,7 @@ export default function AppPage() {
           )}
           {isPro ? (
             <span style={{ fontSize: '0.75rem', color: 'var(--blue)', letterSpacing: '0.08em' }}>PRO</span>
-          ) : remaining > 0 ? (
+          ) : remaining === null ? null : remaining > 0 ? (
             <span style={{ fontSize: '0.78rem', color: 'var(--fg3)' }}>{remaining} free email{remaining !== 1 ? 's' : ''} left</span>
           ) : (
             <Link href="/upgrade" style={{
