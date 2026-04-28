@@ -9,7 +9,7 @@ const FREE_LIMIT = 5
 
 export async function POST(req: NextRequest) {
   try {
-    const { emailType, name, property, context, tone, userId } = await req.json()
+    const { emailType, name, property, context, tone, userId, agentName, agentPhone } = await req.json()
 
     if (!emailType || !name || !property) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
@@ -19,7 +19,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid email type.' }, { status: 400 })
     }
 
-    // Check usage limit for free users
+    // Check if type is pro-only
+    const typeConfig = EMAIL_TYPES.find(t => t.id === emailType)
+    const isProType = typeConfig?.pro ?? false
+
+    // Check user status
+    let isPro = false
     if (userId) {
       const { data: user } = await supabaseAdmin
         .from('users')
@@ -27,9 +32,16 @@ export async function POST(req: NextRequest) {
         .eq('id', userId)
         .single()
 
-      if (user && !user.is_pro && user.generations_used >= FREE_LIMIT) {
-        return NextResponse.json({ error: 'FREE_LIMIT_REACHED' }, { status: 403 })
+      if (user) {
+        isPro = user.is_pro
+        if (!isPro && user.generations_used >= FREE_LIMIT) {
+          return NextResponse.json({ error: 'FREE_LIMIT_REACHED' }, { status: 403 })
+        }
       }
+    }
+
+    if (isProType && !isPro) {
+      return NextResponse.json({ error: 'PRO_REQUIRED' }, { status: 403 })
     }
 
     const toneDesc: Record<string, string> = {
@@ -38,7 +50,11 @@ export async function POST(req: NextRequest) {
       friendly: 'warm, friendly and personal',
     }
 
-    const typeLabel = EMAIL_TYPES.find(t => t.id === emailType)?.label ?? emailType
+    const typeLabel = typeConfig?.label ?? emailType
+
+    const agentSignature = agentName
+      ? `Agent name: ${agentName}${agentPhone ? `, Phone: ${agentPhone}` : ''}`
+      : ''
 
     const userPrompt = `
 Email type: ${typeLabel}
@@ -46,6 +62,7 @@ Lead/client name: ${name}
 Property: ${property}
 Additional context: ${context || 'None provided'}
 Desired tone: ${toneDesc[tone] ?? 'balanced'}
+${agentSignature}
 `.trim()
 
     const message = await client.messages.create({

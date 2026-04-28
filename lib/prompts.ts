@@ -1,12 +1,13 @@
 export const EMAIL_TYPES = [
-  { id: 'first_contact',    label: 'First contact with lead',      icon: '✦' },
-  { id: 'showing_followup', label: 'Follow-up after showing',       icon: '◈' },
-  { id: 'offer_submission', label: 'Submitting an offer',           icon: '◇' },
-  { id: 'counteroffer',     label: 'Counteroffer / Negotiation',    icon: '⟁' },
-  { id: 'document_request', label: 'Requesting documents',          icon: '▣' },
-  { id: 'closing_congrats', label: 'Post-closing thank you',        icon: '★' },
-  { id: 'cold_lead',        label: 'Re-engaging a cold lead',       icon: '◎' },
-  { id: 'new_listings',     label: 'New listing recommendation',    icon: '⬡' },
+  { id: 'first_contact',    label: 'First contact with lead',      icon: '✦', pro: false },
+  { id: 'showing_followup', label: 'Follow-up after showing',       icon: '◈', pro: false },
+  { id: 'offer_submission', label: 'Submitting an offer',           icon: '◇', pro: false },
+  { id: 'counteroffer',     label: 'Counteroffer / Negotiation',    icon: '⟁', pro: false },
+  { id: 'document_request', label: 'Requesting documents',          icon: '▣', pro: true  },
+  { id: 'closing_congrats', label: 'Post-closing thank you',        icon: '★', pro: true  },
+  { id: 'cold_lead',        label: 'Re-engaging a cold lead',       icon: '◎', pro: true  },
+  { id: 'new_listings',     label: 'New listing recommendation',    icon: '⬡', pro: true  },
+  { id: 'custom',           label: 'Custom email',                  icon: '✎', pro: true  },
 ]
 
 export const TONES = [
@@ -22,6 +23,7 @@ Never use em dashes (—) anywhere in the email. Use commas, periods or just rew
 Avoid filler phrases like "I hope this email finds you well", "don't hesitate to reach out", or "I'm here to help".
 Sound like a real person wrote this, not a template.
 Output only the email itself. Start with a subject line prefixed with "Subject:".
+If agent name and phone are provided, sign off with them. Otherwise use [Agent Name] and [Phone Number] as placeholders.
 `
 
 export const SYSTEM_PROMPTS: Record<string, string> = {
@@ -56,4 +58,8 @@ Keep it under 80 words. Bring something new to the table, a market shift, a new 
   new_listings: `${BASE_RULES}
 Write an email from an agent sharing new listing recommendations with a buyer lead or past client.
 Make it feel curated, not mass-produced. Reference what the client is looking for, highlight what makes each listing worth a look, and make scheduling a showing feel easy.`,
+
+  custom: `${BASE_RULES}
+Write a professional real estate email based on the agent's custom instructions provided in the context field.
+Follow the instructions closely. Adapt tone and length to what the situation calls for.`,
 }
