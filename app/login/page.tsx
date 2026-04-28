@@ -32,7 +32,7 @@ function LoginForm() {
       if (error) {
         setError(error.message)
       } else {
-        router.push(redirect)
+        window.location.href = redirect
       }
     }
 

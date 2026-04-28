@@ -28,14 +28,31 @@ export async function POST(req: NextRequest) {
     if (userId) {
       const { data: user } = await supabaseAdmin
         .from('users')
-        .select('is_pro, generations_used')
+        .select('is_pro, generations_used, generations_reset_at')
         .eq('id', userId)
         .single()
 
       if (user) {
         isPro = user.is_pro
-        if (!isPro && user.generations_used >= FREE_LIMIT) {
-          return NextResponse.json({ error: 'FREE_LIMIT_REACHED' }, { status: 403 })
+
+        if (!isPro) {
+          // Check if monthly reset is due
+          const resetAt = user.generations_reset_at ? new Date(user.generations_reset_at) : null
+          const now = new Date()
+          const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+
+          if (!resetAt || resetAt < oneMonthAgo) {
+            // Reset counter
+            await supabaseAdmin
+              .from('users')
+              .update({ generations_used: 0, generations_reset_at: now.toISOString() })
+              .eq('id', userId)
+            user.generations_used = 0
+          }
+
+          if (user.generations_used >= FREE_LIMIT) {
+            return NextResponse.json({ error: 'FREE_LIMIT_REACHED' }, { status: 403 })
+          }
         }
       }
     }
