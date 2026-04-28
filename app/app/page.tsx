@@ -124,31 +124,35 @@ export default function AppPage() {
           PropMail
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {authLoaded && !userEmail && (
-            <Link href="/login" style={{ fontSize: '0.78rem', color: 'var(--fg3)', textDecoration: 'none' }}>Sign in</Link>
-          )}
-          {loaded && isPro ? (
-            <span style={{ fontSize: '0.75rem', color: 'var(--blue)', letterSpacing: '0.08em' }}>PRO</span>
-          ) : loaded && remaining !== null && remaining > 0 ? (
-            <span style={{ fontSize: '0.78rem', color: 'var(--fg3)' }}>{remaining} free email{remaining !== 1 ? 's' : ''} left</span>
-          ) : loaded && remaining === 0 ? (
-            <Link href="/upgrade" style={{
-              background: 'var(--blue)', border: 'none', borderRadius: '20px',
-              padding: '6px 14px', fontSize: '0.75rem', fontWeight: 600,
-              color: '#0b0f14', textDecoration: 'none'
-            }}>Upgrade to Pro</Link>
-          )}
-          {isPro && userEmail && (
-            <button onClick={() => setShowProfile(true)} style={{
-              background: 'none', border: '1px solid var(--border)', borderRadius: '6px',
-              padding: '5px 10px', fontSize: '0.75rem', color: 'var(--fg2)', cursor: 'pointer'
-            }}>My profile</button>
-          )}
-          {userEmail && (
-            <button onClick={handleSignOut} style={{
-              background: 'none', border: '1px solid var(--border)', borderRadius: '6px',
-              padding: '5px 10px', fontSize: '0.75rem', color: 'var(--fg3)', cursor: 'pointer'
-            }}>Sign out</button>
+          {loaded && (
+            <>
+              {!userEmail && (
+                <Link href="/login" style={{ fontSize: '0.78rem', color: 'var(--fg3)', textDecoration: 'none' }}>Sign in</Link>
+              )}
+              {isPro ? (
+                <span style={{ fontSize: '0.75rem', color: 'var(--blue)', letterSpacing: '0.08em' }}>PRO</span>
+              ) : remaining !== null && remaining > 0 ? (
+                <span style={{ fontSize: '0.78rem', color: 'var(--fg3)' }}>{remaining} free email{remaining !== 1 ? 's' : ''} left</span>
+              ) : remaining === 0 ? (
+                <Link href="/upgrade" style={{
+                  background: 'var(--blue)', border: 'none', borderRadius: '20px',
+                  padding: '6px 14px', fontSize: '0.75rem', fontWeight: 600,
+                  color: '#0b0f14', textDecoration: 'none'
+                }}>Upgrade to Pro</Link>
+              ) : null}
+              {isPro && userEmail && (
+                <button onClick={() => setShowProfile(true)} style={{
+                  background: 'none', border: '1px solid var(--border)', borderRadius: '6px',
+                  padding: '5px 10px', fontSize: '0.75rem', color: 'var(--fg2)', cursor: 'pointer'
+                }}>My profile</button>
+              )}
+              {userEmail && (
+                <button onClick={handleSignOut} style={{
+                  background: 'none', border: '1px solid var(--border)', borderRadius: '6px',
+                  padding: '5px 10px', fontSize: '0.75rem', color: 'var(--fg3)', cursor: 'pointer'
+                }}>Sign out</button>
+              )}
+            </>
           )}
         </div>
       </header>
