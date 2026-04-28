@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     const userId = user.id
 
-    const { emailType, name, property, context, tone, agentName, agentPhone } = await req.json()
+    const { emailType, name, property, context, tone, agentName, agentPhone, brokerage, licenseNumber, website, signature } = await req.json()
 
     if (!emailType || !name || !property) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
@@ -86,9 +86,11 @@ export async function POST(req: NextRequest) {
     }
 
     const typeLabel = typeConfig?.label ?? emailType
-    const agentSignature = agentName
-      ? `Agent name: ${agentName}${agentPhone ? `, Phone: ${agentPhone}` : ''}`
-      : ''
+    const agentSignature = signature
+      ? `Agent signature block to use at the end of the email:\n${signature}`
+      : agentName
+        ? `Agent name: ${agentName}${agentPhone ? `, Phone: ${agentPhone}` : ''}${brokerage ? `, Brokerage: ${brokerage}` : ''}${licenseNumber ? `, License: ${licenseNumber}` : ''}${website ? `, Website: ${website}` : ''}`
+        : ''
 
     const userPrompt = `
 Email type: ${typeLabel}

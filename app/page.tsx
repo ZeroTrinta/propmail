@@ -258,28 +258,28 @@ export default function Home() {
         <p style={{ fontSize: '0.68rem', letterSpacing: '0.18em', color: 'var(--blue)', textTransform: 'uppercase', marginBottom: '40px' }}>
           Simple pricing
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '28px 20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '28px 20px', display: 'flex', flexDirection: 'column' }}>
             <p style={{ fontSize: '0.78rem', color: 'var(--fg3)', marginBottom: '8px' }}>Free</p>
             <p style={{ fontFamily: 'Lora, serif', fontSize: '2rem', color: 'var(--fg)', fontWeight: 700, marginBottom: '16px' }}>$0</p>
-            <ul style={{ listStyle: 'none', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+            <ul style={{ listStyle: 'none', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px', flex: 1 }}>
               {['5 emails per month', '4 email types', 'Tone control'].map(i => (
                 <li key={i} style={{ fontSize: '0.82rem', color: 'var(--fg2)' }}>✦ {i}</li>
               ))}
             </ul>
-            <Link href="/login" style={{ display: 'block', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '7px', padding: '10px', fontSize: '0.85rem', color: 'var(--fg2)', textDecoration: 'none', fontWeight: 500 }}>
+            <Link href="/login" style={{ display: 'block', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '7px', padding: '10px', fontSize: '0.85rem', color: 'var(--fg2)', textDecoration: 'none', fontWeight: 500, marginTop: 'auto' }}>
               Get started
             </Link>
           </div>
-          <div style={{ background: 'var(--blue-dim)', border: '1px solid var(--blue-border)', borderRadius: '12px', padding: '28px 20px' }}>
+          <div style={{ background: 'var(--blue-dim)', border: '1px solid var(--blue-border)', borderRadius: '12px', padding: '28px 20px', display: 'flex', flexDirection: 'column' }}>
             <p style={{ fontSize: '0.78rem', color: 'var(--blue)', marginBottom: '8px' }}>Pro</p>
             <p style={{ fontFamily: 'Lora, serif', fontSize: '2rem', color: 'var(--blue)', fontWeight: 700, marginBottom: '16px' }}>$19<span style={{ fontSize: '0.9rem', opacity: 0.6 }}>/mo</span></p>
-            <ul style={{ listStyle: 'none', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
-              {['Unlimited emails', 'All 8 email types', 'Custom email type', 'Agent profile', 'Email history'].map(i => (
+            <ul style={{ listStyle: 'none', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px', flex: 1 }}>
+              {['Unlimited emails', 'All email types', 'Custom email type', 'Agent profile', 'Email history', 'All future updates'].map(i => (
                 <li key={i} style={{ fontSize: '0.82rem', color: 'rgba(99,179,237,0.85)' }}>✦ {i}</li>
               ))}
             </ul>
-            <Link href="/login" style={{ display: 'block', background: 'var(--blue)', borderRadius: '7px', padding: '10px', fontSize: '0.85rem', color: '#0b0f14', textDecoration: 'none', fontWeight: 600 }}>
+            <Link href="/login" style={{ display: 'block', background: 'var(--blue)', borderRadius: '7px', padding: '10px', fontSize: '0.85rem', color: '#0b0f14', textDecoration: 'none', fontWeight: 600, marginTop: 'auto' }}>
               Subscribe to Pro
             </Link>
           </div>

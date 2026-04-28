@@ -16,11 +16,18 @@ export default function AppPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [isPro, setIsPro] = useState(false)
   const [generationsUsed, setGenerationsUsed] = useState<number | null>(null)
-  const [agentName, setAgentName] = useState('')
-  const [agentPhone, setAgentPhone] = useState('')
-  const [showProfile, setShowProfile] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [authLoaded, setAuthLoaded] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
+
+  // Profile fields
+  const [agentName, setAgentName] = useState('')
+  const [agentPhone, setAgentPhone] = useState('')
+  const [brokerage, setBrokerage] = useState('')
+  const [licenseNumber, setLicenseNumber] = useState('')
+  const [website, setWebsite] = useState('')
+  const [defaultTone, setDefaultTone] = useState('balanced')
+  const [signature, setSignature] = useState('')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -30,7 +37,7 @@ export default function AppPage() {
         setAuthLoaded(true)
         supabase
           .from('users')
-          .select('is_pro, generations_used, agent_name, agent_phone')
+          .select('is_pro, generations_used, agent_name, agent_phone, brokerage, license_number, website, default_tone, signature')
           .eq('id', data.user.id)
           .single()
           .then(({ data: u }) => {
@@ -39,6 +46,12 @@ export default function AppPage() {
               setGenerationsUsed(u.generations_used)
               setAgentName(u.agent_name ?? '')
               setAgentPhone(u.agent_phone ?? '')
+              setBrokerage(u.brokerage ?? '')
+              setLicenseNumber(u.license_number ?? '')
+              setWebsite(u.website ?? '')
+              setDefaultTone(u.default_tone ?? 'balanced')
+              setSignature(u.signature ?? '')
+              setForm(f => ({ ...f, tone: u.default_tone ?? 'balanced' }))
             }
             setLoaded(true)
           })
@@ -55,7 +68,16 @@ export default function AppPage() {
 
   const handleSaveProfile = async () => {
     if (!userId) return
-    await supabase.from('users').update({ agent_name: agentName, agent_phone: agentPhone }).eq('id', userId)
+    await supabase.from('users').update({
+      agent_name: agentName,
+      agent_phone: agentPhone,
+      brokerage,
+      license_number: licenseNumber,
+      website,
+      default_tone: defaultTone,
+      signature,
+    }).eq('id', userId)
+    setForm(f => ({ ...f, tone: defaultTone }))
     setShowProfile(false)
   }
 
@@ -80,7 +102,7 @@ export default function AppPage() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ ...form, emailType: selectedType, agentName, agentPhone }),
+      body: JSON.stringify({ ...form, emailType: selectedType, agentName, agentPhone, brokerage, licenseNumber, website, signature }),
     })
 
     const data = await res.json()
@@ -92,12 +114,7 @@ export default function AppPage() {
 
     setOutput(data.email || 'Something went wrong. Please try again.')
     setLoading(false)
-
-    if (!userId) {
-      setGenerationsUsed(g => (g ?? 0) + 1)
-    } else {
-      setGenerationsUsed(g => (g ?? 0) + 1)
-    }
+    setGenerationsUsed(g => (g ?? 0) + 1)
   }
 
   const handleCopy = () => {
@@ -161,38 +178,80 @@ export default function AppPage() {
       {showProfile && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 100,
-          background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+          background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '24px'
         }}>
           <div style={{
             background: '#0f1621', border: '1px solid var(--border)',
-            borderRadius: '12px', padding: '32px', width: '100%', maxWidth: '360px',
-            display: 'flex', flexDirection: 'column', gap: '16px'
+            borderRadius: '12px', padding: '32px', width: '100%', maxWidth: '460px',
+            display: 'flex', flexDirection: 'column', gap: '20px',
+            maxHeight: '90vh', overflowY: 'auto'
           }}>
-            <h2 style={{ fontFamily: 'Lora, serif', fontSize: '1.1rem', color: 'var(--fg)', margin: 0 }}>Agent profile</h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--fg3)', margin: 0 }}>Your name and phone will be added automatically to every email signature.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <input
-                style={inputStyle}
-                placeholder="Your name (e.g. John Carter)"
-                value={agentName}
-                onChange={e => setAgentName(e.target.value)}
-              />
-              <input
-                style={inputStyle}
-                placeholder="Your phone (e.g. (312) 555-0198)"
-                value={agentPhone}
-                onChange={e => setAgentPhone(e.target.value)}
-              />
+            <div>
+              <h2 style={{ fontFamily: 'Lora, serif', fontSize: '1.2rem', color: 'var(--fg)', margin: '0 0 4px' }}>Agent profile</h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--fg3)', margin: 0 }}>Your details are added automatically to every email signature.</p>
             </div>
+
+            <Section label="BASIC INFO">
+              <Field label="Full name">
+                <input style={inputStyle} placeholder="e.g. John Carter" value={agentName} onChange={e => setAgentName(e.target.value)} />
+              </Field>
+              <Field label="Phone">
+                <input style={inputStyle} placeholder="e.g. (312) 555-0198" value={agentPhone} onChange={e => setAgentPhone(e.target.value)} />
+              </Field>
+              <Field label="Brokerage">
+                <input style={inputStyle} placeholder="e.g. Keller Williams Chicago" value={brokerage} onChange={e => setBrokerage(e.target.value)} />
+              </Field>
+              <Field label="License number">
+                <input style={inputStyle} placeholder="e.g. IL-475.123456" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} />
+              </Field>
+              <Field label="Website">
+                <input style={inputStyle} placeholder="e.g. johncarter.kw.com" value={website} onChange={e => setWebsite(e.target.value)} />
+              </Field>
+            </Section>
+
+            <Section label="PREFERENCES">
+              <Field label="Default tone">
+                <div style={{ display: 'flex', gap: '7px' }}>
+                  {TONES.map(t => (
+                    <button key={t.id} onClick={() => setDefaultTone(t.id)} style={{
+                      flex: 1, background: defaultTone === t.id ? 'var(--blue-dim)' : 'var(--surface)',
+                      border: defaultTone === t.id ? '1px solid var(--blue-border)' : '1px solid var(--border)',
+                      borderRadius: '6px', padding: '8px',
+                      color: defaultTone === t.id ? 'var(--blue)' : 'var(--fg2)',
+                      cursor: 'pointer', fontSize: '0.79rem', transition: 'all 0.12s'
+                    }}>{t.label}</button>
+                  ))}
+                </div>
+              </Field>
+            </Section>
+
+            <Section label="CUSTOM SIGNATURE">
+              <p style={{ fontSize: '0.78rem', color: 'var(--fg3)', marginBottom: '8px' }}>
+                Write your full signature block. This replaces the auto-generated one in every email.
+              </p>
+              <textarea
+                style={{ ...inputStyle, resize: 'vertical', minHeight: '100px' }}
+                placeholder={'e.g.\nJohn Carter | Realtor®\n(312) 555-0198\nKeller Williams Chicago\nLic. IL-475.123456\njohncarter.kw.com'}
+                value={signature}
+                onChange={e => setSignature(e.target.value)}
+              />
+            </Section>
+
+            <Section label="ACCOUNT">
+              <p style={{ fontSize: '0.82rem', color: 'var(--fg2)' }}>{userEmail}</p>
+              <p style={{ fontSize: '0.78rem', color: 'var(--blue)' }}>Pro plan — active</p>
+            </Section>
+
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => setShowProfile(false)} style={{
                 flex: 1, background: 'none', border: '1px solid var(--border)',
-                borderRadius: '7px', padding: '10px', color: 'var(--fg3)', cursor: 'pointer', fontSize: '0.85rem'
+                borderRadius: '7px', padding: '11px', color: 'var(--fg3)', cursor: 'pointer', fontSize: '0.85rem'
               }}>Cancel</button>
               <button onClick={handleSaveProfile} style={{
-                flex: 1, background: 'var(--blue)', border: 'none',
-                borderRadius: '7px', padding: '10px', color: '#0b0f14', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600
-              }}>Save</button>
+                flex: 2, background: 'var(--blue)', border: 'none',
+                borderRadius: '7px', padding: '11px', color: '#0b0f14', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600
+              }}>Save profile</button>
             </div>
           </div>
         </div>
@@ -339,6 +398,15 @@ export default function AppPage() {
 
 function Label({ children }: { children: React.ReactNode }) {
   return <p style={{ fontSize: '0.62rem', letterSpacing: '0.16em', color: 'var(--blue)', fontWeight: 500 }}>{children}</p>
+}
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <p style={{ fontSize: '0.6rem', letterSpacing: '0.14em', color: 'var(--blue)', fontWeight: 500 }}>{label}</p>
+      {children}
+    </div>
+  )
 }
 
 function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
