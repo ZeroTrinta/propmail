@@ -19,6 +19,7 @@ export default function AppPage() {
   const [agentName, setAgentName] = useState('')
   const [agentPhone, setAgentPhone] = useState('')
   const [showProfile, setShowProfile] = useState(false)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -37,6 +38,7 @@ export default function AppPage() {
               setAgentName(u.agent_name ?? '')
               setAgentPhone(u.agent_phone ?? '')
             }
+            setLoaded(true)
           })
       } else {
         window.location.replace('/login')
@@ -90,11 +92,9 @@ export default function AppPage() {
     setLoading(false)
 
     if (!userId) {
-      const next = generationsUsed + 1
-      setGenerationsUsed(next)
-      localStorage.setItem('pm_gen_count', String(next))
+      setGenerationsUsed(g => (g ?? 0) + 1)
     } else {
-      setGenerationsUsed(g => g + 1)
+      setGenerationsUsed(g => (g ?? 0) + 1)
     }
   }
 
@@ -125,11 +125,11 @@ export default function AppPage() {
           {!userEmail && (
             <Link href="/login" style={{ fontSize: '0.78rem', color: 'var(--fg3)', textDecoration: 'none' }}>Sign in</Link>
           )}
-          {isPro ? (
+          {loaded && isPro ? (
             <span style={{ fontSize: '0.75rem', color: 'var(--blue)', letterSpacing: '0.08em' }}>PRO</span>
-          ) : remaining === null ? null : remaining > 0 ? (
+          ) : loaded && remaining !== null && remaining > 0 ? (
             <span style={{ fontSize: '0.78rem', color: 'var(--fg3)' }}>{remaining} free email{remaining !== 1 ? 's' : ''} left</span>
-          ) : (
+          ) : loaded && remaining === 0 ? (
             <Link href="/upgrade" style={{
               background: 'var(--blue)', border: 'none', borderRadius: '20px',
               padding: '6px 14px', fontSize: '0.75rem', fontWeight: 600,
